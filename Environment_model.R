@@ -4,33 +4,8 @@ library(broom)
 library(ggplot2)
 library(patchwork)
 library(table1)
-
-table1(~ coast_dist_cat + river_dist_cat, dt4_adl_mmse_ch4_tc)
-# load water 
-load("cluster_alldt_water.rdata")
-dt4_adl_mmse_ch4_tc <- merge(dt4_adl_mmse_ch4_tc,
-      cluster_alldt_water[,c("id","dist_to_coast_km","dist_to_river_km","coast_dist_cat","river_dist_cat")],
-      by="id",
-      all.x=T)
-
-dt4_adl_mmse_ch4_tc <- merge(dt4_adl_mmse_ch4_tc,
-                             cluster_alldt_water[,c("id","ap_infra_9g_label","ap_infra_9g")],
-                             by="id",
-                             all.x=T)
-table1(~dist_to_coast_km|coast_dist_cat,cluster_alldt_water)
-table1(~dist_to_river_km|river_dist_cat,cluster_alldt_water)
-
-dt4_adl_mmse_ch4_tc <- dt4_adl_mmse_ch4_tc %>% mutate(near_coast_100km = ifelse(dist_to_coast_km<100,1,0),
-                                                      near_river1j_20km = ifelse(dist_to_river_km<20,1,0))
-dt4_adl_mmse_ch4_tc <- dt4_adl_mmse_ch4_tc %>% mutate(dist_to_coast_km_neg = -dist_to_coast_km,
-                                                      dist_to_river_km_neg = -dist_to_river_km)
-library(janitor)
-cluster_alldt_water %>%
-  tabyl(coast_dist_cat, ap_infra_9g_label) %>%             # two-way table
-  adorn_percentages("row") %>%                    # row-wise %
-  adorn_pct_formatting(digits = 1) %>%            # e.g., 12.3%
-  adorn_ns() %>% View()   
-
+# demo data
+# dt_model <- read.csv("demo.csv")
 # eco cols
 other_col
 cisi_terms
@@ -66,21 +41,20 @@ cox_f <- function(x1,x2=NULL,cov,dataset,category){
     dplyr::select(term, estimate, starts_with("conf"),p.value) %>%  head(category)
   return(data.frame(HR))
 }
-summary(dt4_adl_mmse_ch4_tc$NO2_lastyear_ugm3_10)
-summary(chap_no2_2011_final$CHAP_NO2_2011)
+summary(dt_model$NO2_lastyear_ugm3_10)
 
-summary(coxph(Surv(survTime_year,event) ~ Road_lastyear_10k + NO2_chap_lastyear_10 +
-                GDP2010_buffer005mean_100+Pop_lastyear_100 + Elevation_100 + 
+summary(coxph(Surv(survTime_year,event) ~ Road_lastyear_10k  +
+                GDP2010_buffer005mean_100+Pop_lastyear_100  + Infras_telecommunication100_nonzero+
                 age + Gender + 
                 Education + Marriage + Regular_exercise_2 + Smoking_2 + Drinking_2 + 
                 Residence + strata(prov_lab),
-              data=dt4_adl_mmse_ch4_tc))
+              data=dt_model))
 summary(coxph(Surv(survTime_year,event) ~ Road_lastyear_10k + NO2_lastyear_ugm3_10 +
                 GDP2010_buffer005mean_100+Pop_lastyear_100 + Elevation_100 + 
                 age + Gender + 
                 Education + Marriage + Regular_exercise_2 + Smoking_2 + Drinking_2 + 
                 Residence + strata(prov_lab),
-              data=dt4_adl_mmse_ch4_tc))
+              data=dt_model))
 
 model_colors <- c(
   "A Unadjusted" = "#1f77b4",
@@ -92,9 +66,6 @@ model_colors <- c(
   "G:F+Road (no AP)" = "#e377c2",
   "H:G+AP+Road"="#17BECF"
 )
-table(model_satu_2$term)
-table(infra_model_satu$term)
-
 cov_demo <- c("age","Gender","Education","Marriage",
               "Regular_exercise_2","Smoking_2","Drinking_2")
 cov_climate2 <- c("strata(prov_lab)","Elevation",
@@ -104,53 +75,52 @@ cov_eco <- c("Residence","GDP2010_buffer005mean_100","Nighttime_light","Pop_last
 cov_ap <- c("PM25_lastyear_10","NO2_lastyear_ugm3_10")
 cov_rd <- "Road_lastyear_10k"
 cov_adlmmse <- c("adl_2","CognitiveImpairment")
-summary(dt4_adl_mmse_ch4_tc$GDP2010_buffer005mean_100)
+summary(dt_model$GDP2010_buffer005mean_100)
 # model ----
 model_satu_2 <- bind_rows(bind_rows(lapply(c(Soc_col,Eco_col,Nat_col),
                                                cox_f,
                                                x2=NULL,
                                                cov=NULL,
-                                               dataset = dt4_adl_mmse_ch4_tc,category = 1)) %>% mutate(Model="A Unadjusted"),
+                                               dataset = dt_model,category = 1)) %>% mutate(Model="A Unadjusted"),
                               bind_rows(lapply(c(Soc_col,Eco_col,Nat_col),
                                                cox_f,
                                                x2=NULL,
                                                cov=cov_demo,
-                                               dataset = dt4_adl_mmse_ch4_tc,category = 1)) %>% mutate(Model="B:A+Demography and Lifestyle"),
+                                               dataset = dt_model,category = 1)) %>% mutate(Model="B:A+Demography and Lifestyle"),
                               bind_rows(lapply(c(Soc_col,Eco_col,Nat_col),
                                           cox_f,
                                           x2=NULL,
                                           cov=c(cov_demo,cov_adlmmse),
-                                          dataset = dt4_adl_mmse_ch4_tc,category = 1)) %>% mutate(Model="C:B+Health"),
+                                          dataset = dt_model,category = 1)) %>% mutate(Model="C:B+Health"),
                               bind_rows(lapply(c(Soc_col,Eco_col,Nat_col),
                                                cox_f,
                                                x2=NULL,
                                                cov=c(cov_demo,cov_adlmmse,cov_climate2),                           
-                                               dataset = dt4_adl_mmse_ch4_tc,category = 1)) %>% mutate(Model="D:C+Climate and Geography"),
+                                               dataset = dt_model,category = 1)) %>% mutate(Model="D:C+Climate and Geography"),
                               bind_rows(lapply(c(Soc_col,Eco_col,Nat_col),
                                                cox_f,
                                                x2=NULL,
                                                cov=c(cov_demo,cov_adlmmse,cov_climate2,cov_eco),
-                                               dataset = dt4_adl_mmse_ch4_tc,category = 1)) %>% mutate(Model="E:D+Economy"),
+                                               dataset = dt_model,category = 1)) %>% mutate(Model="E:D+Economy"),
                               bind_rows(lapply(c(Soc_col,Eco_col,Nat_col),
                                                cox_f,
                                                x2=NULL,
                                                cov=c(cov_demo,cov_adlmmse,cov_climate2,cov_eco,cov_ap
                                                ),
-                                               dataset = dt4_adl_mmse_ch4_tc,category = 1)) %>% mutate(Model="F:E+AP (no road)"),
+                                               dataset = dt_model,category = 1)) %>% mutate(Model="F:E+AP (no road)"),
                               bind_rows(lapply(c(Soc_col,Eco_col,Nat_col),
                                                cox_f,
                                                x2=NULL,
                                                cov=c(cov_demo,cov_adlmmse,cov_climate2,cov_eco,cov_rd),
-                                               dataset = dt4_adl_mmse_ch4_tc,category = 1)) %>% mutate(Model="G:F+Road (no AP)"),
+                                               dataset = dt_model,category = 1)) %>% mutate(Model="G:F+Road (no AP)"),
                               bind_rows(lapply(c(Soc_col,Eco_col,Nat_col),
                                                cox_f,
                                                x2=NULL,
                                                cov=c(cov_demo,cov_adlmmse,cov_climate2,cov_eco,
                                                      cov_ap,cov_rd),
-                                               dataset = dt4_adl_mmse_ch4_tc,category = 1)) %>% mutate(Model="H:G+AP+Road")
+                                               dataset = dt_model,category = 1)) %>% mutate(Model="H:G+AP+Road")
 )
 
-model_satu <- model_satu %>% mutate(sig = ifelse(p.value < 0.05, "*", "")) 
 model_satu_2 <- model_satu_2 %>% mutate(sig = ifelse(p.value < 0.05, "*", "")) 
 
 write.csv(model_satu,"model_satu.csv")
@@ -159,7 +129,7 @@ model_satuD2 <- bind_rows(lapply(c(Soc_col,Eco_col,Nat_col),
                  cox_f,
                  x2=NULL,
                  cov=c(cov_demo,cov_climate,cov_eco,cov_adlmmse),
-                 dataset = dt4_adl_mmse_ch4_tc,category = 1)) %>% 
+                 dataset = dt_model,category = 1)) %>% 
   mutate(Model="D2:C+Economy",sig = ifelse(p.value < 0.05, "*", ""))
 
 # Sco -----
@@ -174,10 +144,10 @@ infra_term_titles <- c(
   "Infras_transportation100" = "Transportation infrastructure",
   "Infras_energy100" = "Energy infrastructure",
   
-  "Infras_healthcare100_nonzeroPresence" = "Healthcare infrastructure\n(Nonzero vs Zero)",
+  "Infras_healthcare100_nonzero" = "Healthcare infrastructure\n(Nonzero vs Zero)",
   "Infras_healthcare100_log" = "Healthcare infrastructure\n(log-scale)",
   
-  "Infras_education100_nonzeroPresence" = "Education infrastructure\n(Nonzero vs Zero)",
+  "Infras_education100_nonzero" = "Education infrastructure\n(Nonzero vs Zero)",
   "Infras_education100_log" = "Education infrastructure\n(log-scale)",
   
   "Infras_telecommunication100_nonzero" = "Telecommunication infrastructure\n(Nonzero vs Zero)",
@@ -336,7 +306,7 @@ cox_f(x1="NO2_chap_lastyear_10",
                  x2=NULL,
                  cov=c(cov_demo,cov_climate2,cov_eco,
                        cov_ap,cov_rd,cov_adlmmse),
-      dataset = dt4_adl_mmse_ch4_tc,category = 1) %>% mutate(Model="H")
+      dataset = dt_model,category = 1) %>% mutate(Model="H")
 #                  term  estimate conf.low conf.high     p.value Model
 # 1 NO2_chap_lastyear_10 0.6550565 0.610362 0.7030237 8.67909e-32     H
 
@@ -568,7 +538,7 @@ ggsave("figure/plot_modelE.png",plot_model_E,
 
 
 # spline ----
-spldt <- dt4_adl_mmse_ch4_tc
+spldt <- dt_model
 library(rms)
 dd <- datadist(spldt)
 options(datadist='dd')
@@ -807,7 +777,7 @@ ggsave("figure/spline_rd_byGDP2_2.png",
 
 # stratification ----
 library(Hmisc)
-dt4_adl_mmse_ch4_tc <- dt4_adl_mmse_ch4_tc %>% mutate(NDVI_lastyear_4g = cut2(NDVI_lastyear_gt0_01,g=4),
+dt_model <- dt_model %>% mutate(NDVI_lastyear_4g = cut2(NDVI_lastyear_gt0_01,g=4),
                                                       NegativePM25_4g = cut2(PM25_lastyear_10_neg,g=4),
                                                       NegativeNO2_4g = cut2(NO2_lastyear_ugm3_10_neg,g=4),
                                                       GDP2010_4g = cut2(GDP2010_buffer005mean_100,g=4),
@@ -816,28 +786,28 @@ dt4_adl_mmse_ch4_tc <- dt4_adl_mmse_ch4_tc %>% mutate(NDVI_lastyear_4g = cut2(ND
                                                       CISI_4g = cut2(CISI,g=4),
                                                       Energy_4g = cut2(Subscore_energy,g=4))
 
-dt4_adl_mmse_ch4_tc$Infras_healthcare100_nonzero <- factor(dt4_adl_mmse_ch4_tc$Infras_healthcare100_nonzero,
+dt_model$Infras_healthcare100_nonzero <- factor(dt_model$Infras_healthcare100_nonzero,
                                                            levels = c(0,1),labels=c("No presence","Presence"))
-dt4_adl_mmse_ch4_tc$Infras_education100_nonzero <- factor(dt4_adl_mmse_ch4_tc$Infras_education100_nonzero,
+dt_model$Infras_education100_nonzero <- factor(dt_model$Infras_education100_nonzero,
                                                           levels = c(0,1),labels=c("No presence","Presence"))
-summary(dt4_adl_mmse_ch4_tc[dt4_adl_mmse_ch4_tc$Infras_healthcare100_nonzero=="Presence",]$Infras_healthcare100)
-hist(dt4_adl_mmse_ch4_tc[dt4_adl_mmse_ch4_tc$Infras_healthcare100_nonzero=="Presence",]$Infras_healthcare100)
-summary(dt4_adl_mmse_ch4_tc[dt4_adl_mmse_ch4_tc$Infras_education100_nonzero=="Presence",]$Infras_education100)
+summary(dt_model[dt_model$Infras_healthcare100_nonzero=="Presence",]$Infras_healthcare100)
+hist(dt_model[dt_model$Infras_healthcare100_nonzero=="Presence",]$Infras_healthcare100)
+summary(dt_model[dt_model$Infras_education100_nonzero=="Presence",]$Infras_education100)
 
-summary(dt4_adl_mmse_ch4_tc$Infras_healthcare100_nonzero)
-summary(dt4_adl_mmse_ch4_tc$Infras_education100_nonzero)
-table(dt4_adl_mmse_ch4_tc$Infras_healthcare100_4g,useNA = "ifany")
-table1(~Infras_education100+Infras_education100_4g|Infras_education100_nonzero,dt4_adl_mmse_ch4_tc)
-table1(~Infras_healthcare100+Infras_healthcare100_4g|Infras_healthcare100_nonzero,dt4_adl_mmse_ch4_tc)
+summary(dt_model$Infras_healthcare100_nonzero)
+summary(dt_model$Infras_education100_nonzero)
+table(dt_model$Infras_healthcare100_4g,useNA = "ifany")
+table1(~Infras_education100+Infras_education100_4g|Infras_education100_nonzero,dt_model)
+table1(~Infras_healthcare100+Infras_healthcare100_4g|Infras_healthcare100_nonzero,dt_model)
 
-cuts_pos_healthcare <- cut2(dt4_adl_mmse_ch4_tc$Infras_healthcare100[
-  dt4_adl_mmse_ch4_tc$Infras_healthcare100 > 0],
+cuts_pos_healthcare <- cut2(dt_model$Infras_healthcare100[
+  dt_model$Infras_healthcare100 > 0],
   g = 3)
-cuts_pos_education <- cut2(dt4_adl_mmse_ch4_tc$Infras_education100[
-  dt4_adl_mmse_ch4_tc$Infras_education100 > 0],
+cuts_pos_education <- cut2(dt_model$Infras_education100[
+  dt_model$Infras_education100 > 0],
   g = 3)
 
-dt4_adl_mmse_ch4_tc <- dt4_adl_mmse_ch4_tc %>%
+dt_model <- dt_model %>%
   mutate(
     Infras_healthcare100_4g = NA_character_,
     Infras_healthcare100_4g = replace(
@@ -855,7 +825,7 @@ dt4_adl_mmse_ch4_tc <- dt4_adl_mmse_ch4_tc %>%
       levels = c("0", levels(cuts_pos_healthcare))
     )
   )
-dt4_adl_mmse_ch4_tc <- dt4_adl_mmse_ch4_tc %>%
+dt_model <- dt_model %>%
   mutate(
     Infras_education100_4g = NA_character_,
     Infras_education100_4g = replace(
@@ -875,8 +845,8 @@ dt4_adl_mmse_ch4_tc <- dt4_adl_mmse_ch4_tc %>%
   )
 
 
-table1(~Infras_healthcare100|Infras_healthcare100_4g,dt4_adl_mmse_ch4_tc)
-table1(~Infras_education100|Infras_education100_4g,dt4_adl_mmse_ch4_tc)
+table1(~Infras_healthcare100|Infras_healthcare100_4g,dt_model)
+table1(~Infras_education100|Infras_education100_4g,dt_model)
 
 
 stra_variables1 <- c("NDVI_lastyear_4g", "NegativePM25_4g", "NegativeNO2_4g",
@@ -889,7 +859,7 @@ stra_values <- list()
 
 # Loop over each variable and get unique values
 for (variable in stra_variables1) {
-  stra_values[[variable]] <- unique(dt4_adl_mmse_ch4_tc[[variable]])
+  stra_values[[variable]] <- unique(dt_model[[variable]])
 }
 
 stra_forrd_results <- list()
@@ -916,7 +886,7 @@ for (variable in stra_variables1) {
   values <- stra_values[[variable]]  
   for (value in values) {  
     subset_name <- paste0(variable, "_", value)
-    subset <- subset(dt4_adl_mmse_ch4_tc, get(variable) == value)
+    subset <- subset(dt_model, get(variable) == value)
     stra_forrd_results[[subset_name]] <- HR_strabycov(
       dataset = subset,
       env = "Road_lastyear_10k",
@@ -1093,7 +1063,7 @@ rm(stra_values_pop,stra_forrd_results_pop,stra_forrd_pop_bind)
 stra_values_pop <- list()
 # Loop over each variable and get unique values
 for (variable in stra_variables_pop) {
-  stra_values_pop[[variable]] <- unique(dt4_adl_mmse_ch4_tc[[variable]])
+  stra_values_pop[[variable]] <- unique(dt_model[[variable]])
 }
 stra_values_pop[["Smoking_2"]]
 
@@ -1103,7 +1073,7 @@ for (variable in stra_variables_pop) {
   values <- stra_values_pop[[variable]]  
   for (value in values) { 
     subset_name <- paste0(variable, "_", value)
-    subset <- subset(dt4_adl_mmse_ch4_tc, get(variable) == value)
+    subset <- subset(dt_model, get(variable) == value)
     stra_forrd_results_pop[[subset_name]] <- HR_strabycov(
       dataset = subset,
       env = "Road_lastyear_10k",
@@ -1226,15 +1196,15 @@ ggsave(stra_forrd_pop_plot, file="figure/stra_forrd_pop_plot3.png",
        height=6,width=5)
 
 # stratify by road ----
-summary(dt4_adl_mmse_ch4_tc$Road_lastyear_10k)
-dt4_adl_mmse_ch4_tc <- dt4_adl_mmse_ch4_tc %>% mutate(Road_lastyear_5g = ifelse(Road_lastyear_10k==0,1,
+summary(dt_model$Road_lastyear_10k)
+dt_model <- dt_model %>% mutate(Road_lastyear_5g = ifelse(Road_lastyear_10k==0,1,
                                               ifelse(Road_lastyear_10k>0 &  Road_lastyear_10k<=1.472,2,
                                                      ifelse(Road_lastyear_10k>1.472 &  Road_lastyear_10k<=3.529,3,
                                                             ifelse(Road_lastyear_10k>3.529 &  Road_lastyear_10k<=10,4,
                                                                    ifelse(Road_lastyear_10k>10,5,NA))))))
-dt4_adl_mmse_ch4_tc$Road_5g <- factor(dt4_adl_mmse_ch4_tc$Road_lastyear_5g, levels = 1:5, labels = c("0","(0,1.472]","(1.472,3.529]",
+dt_model$Road_5g <- factor(dt_model$Road_lastyear_5g, levels = 1:5, labels = c("0","(0,1.472]","(1.472,3.529]",
                                                                    "(3.529,10]","(10,65.073]"))
-table(dt4_adl_mmse_ch4_tc$Road_5g, dt4_adl_mmse_ch4_tc$Road_lastyear_5g,useNA = "ifany")   
+table(dt_model$Road_5g, dt_model$Road_lastyear_5g,useNA = "ifany")   
 
 HR_strat_byroad <- function(dataset, var, cov, subvar) {
   f <- reformulate(c(var, cov), response = "Surv(survTime_year, event)")
@@ -1259,13 +1229,13 @@ strabyrd_variables1 <- c("NDVI_lastyear_gt0_01", "PM25_lastyear_10_neg", "NO2_la
                      "CISI","Subscore_energy","Infras_healthcare100_nonzero","Infras_education100_nonzero"
 )
 
-road_groups <- levels(dt4_adl_mmse_ch4_tc$Road_5g)
+road_groups <- levels(dt_model$Road_5g)
 cov_4c <- c(cov_demo,cov_climate2,cov_adlmmse,cov_eco)
 
 strabyrd_results_list <- list()
 for (v in strabyrd_variables1) {
   for (r in road_groups) {
-    subset_dt <- dt4_adl_mmse_ch4_tc %>% filter(Road_5g == r)
+    subset_dt <- dt_model %>% filter(Road_5g == r)
     strabyrd_results_list[[paste(v, r, sep = "_")]] <- HR_strat_byroad(
       dataset = subset_dt,
       var = v,
@@ -1333,7 +1303,7 @@ ggsave("figure/straby_rd_other.png",
        height=5,width = 12)
 
 # stratify by road 2 ----
-dt4_adl_mmse_ch4_tc <- dt4_adl_mmse_ch4_tc %>%
+dt_model <- dt_model %>%
   mutate(
     Road_5g = cut(
       Road_lastyear_10k,
@@ -1349,7 +1319,7 @@ dt4_adl_mmse_ch4_tc <- dt4_adl_mmse_ch4_tc %>%
     )
   )
 
-table(dt4_adl_mmse_ch4_tc$Road_5g, useNA = "ifany")
+table(dt_model$Road_5g, useNA = "ifany")
 
 HR_strat_byroad <- function(dataset, exposure, covars, road_group) {
   
@@ -1398,11 +1368,11 @@ env_vars <- c(
   "Infras_education100_nonzero"
 )
 
-road_groups <- levels(dt4_adl_mmse_ch4_tc$Road_5g)
+road_groups <- levels(dt_model$Road_5g)
 library(purrr)
 strabyrd_df <- map_dfr(env_vars, function(v) {
   map_dfr(road_groups, function(r) {
-    subset_dt <- dt4_adl_mmse_ch4_tc %>% filter(Road_5g == r)
+    subset_dt <- dt_model %>% filter(Road_5g == r)
     HR_strat_byroad(
       dataset = subset_dt,
       exposure = v,
@@ -1513,18 +1483,18 @@ ggsave("figure/plot_strabyrd_22.png",plot_strabyrd_df,dpi=300,
 
 
 # road interaction ----
-dt4_adl_mmse_ch4_tc
+dt_model
 stra_var_order
 stra_variables1
 strabyrd_variables1
 variables_to_scale <- setdiff(strabyrd_variables1,c("Residence","Infras_healthcare100_nonzero",
                                                     "Infras_education100_nonzero"))
 for (variable in variables_to_scale) {
-  dt4_adl_mmse_ch4_tc[[paste0("scaled_", variable)]] <- scale(dt4_adl_mmse_ch4_tc[[variable]])
+  dt_model[[paste0("scaled_", variable)]] <- scale(dt_model[[variable]])
 }
-dt4_adl_mmse_ch4_tc$scaled_Road_lastyear_10k <- scale(dt4_adl_mmse_ch4_tc$Road_lastyear_10k)
+dt_model$scaled_Road_lastyear_10k <- scale(dt_model$Road_lastyear_10k)
 
-colnames(dt4_adl_mmse_ch4_tc)
+colnames(dt_model)
 int_col <- c("scaled_NDVI_lastyear_gt0_01","scaled_PM25_lastyear_10_neg", "scaled_NO2_lastyear_ugm3_10_neg",
              "Residence","scaled_GDP2010_buffer005mean_100","scaled_Nighttime_light","scaled_Pop_lastyear_100",
              "scaled_CISI","scaled_Subscore_energy","Infras_healthcare100_nonzero", "Infras_education100_nonzero")
@@ -1554,13 +1524,13 @@ cox_int_f <- function(x1,x2,cov,dataset,int) {
 int_rd <- bind_rows(lapply(int_col,
                            cox_int_f, x1="scaled_Road_lastyear_10k",
                            cov=c(cov_demo,cov_climate),
-                           dataset = dt4_adl_mmse_ch4_tc,
+                           dataset = dt_model,
                            int = 1))
 summary(coxph(Surv(survTime_year,event) ~ scaled_Road_lastyear_10k*Infras_healthcare100_nonzero+
                 age+Gender+Education+Marriage+
                 Regular_exercise_2+Smoking_2+Drinking_2+
                 strata(prov_lab)+Elevation+Temp_sd_lastyear_1c+Temp_mean_lastyear_1c,
-              data=dt4_adl_mmse_ch4_tc))
+              data=dt_model))
 summary(coxph(Surv(survTime_year,event) ~ Road_length_10km+
                 age+Gender+Education+Marriage+
                 Regular_exercise_2+Smoking_2+Drinking_2+
@@ -1574,9 +1544,9 @@ library(dplyr)
 library(patchwork)
 stra_variables1
 stra_variables_pop
-table(dt4_adl_mmse_ch4_tc$Road_lastyear_g,useNA = "ifany")
+table(dt_model$Road_lastyear_g,useNA = "ifany")
 fit_rd <- survfit(Surv(survTime_year, event) ~ Road_lastyear_g,
-                     data = dt4_adl_mmse_ch4_tc)
+                     data = dt_model)
 ggsurvplot(fit_rd)
 survfit2 <- survfit(Surv(survTime_year,event) ~ 1, data = dt4)
 png(filename = "figure/kmcurve.png",res=200,width = 1000, height = 800 )
@@ -1587,20 +1557,20 @@ ggsurvplot(fit_rd) +
   )
 dev.off()
 
-dt4_adl_mmse_ch4_tc$Road_lastyear_2g <- cut2(dt4_adl_mmse_ch4_tc$Road_lastyear_10k,
+dt_model$Road_lastyear_2g <- cut2(dt_model$Road_lastyear_10k,
                                              g=2)
-dt4_adl_mmse_ch4_tc <- dt4_adl_mmse_ch4_tc %>%
+dt_model <- dt_model %>%
   mutate(GDP2010_4g = factor(
     GDP2010_4g,
     levels = c("[ 0.06,  6.41)", "[ 6.41, 14.67)", "[14.67, 41.32)", "[41.32,252.31]")
   ))
-table1(~Road_lastyear_10k |Road_lastyear_5g,dt4_adl_mmse_ch4_tc)
-dt4_adl_mmse_ch4_tc <- dt4_adl_mmse_ch4_tc %>% mutate(Road_lastyear_5g = ifelse(Road_lastyear_10k==0,1,
+table1(~Road_lastyear_10k |Road_lastyear_5g,dt_model)
+dt_model <- dt_model %>% mutate(Road_lastyear_5g = ifelse(Road_lastyear_10k==0,1,
                                                           ifelse(Road_lastyear_10k>0 &  Road_lastyear_10k<=1.472,2,
                                                                  ifelse(Road_lastyear_10k>1.472 &  Road_lastyear_10k<=3.529,3,
                                                                         ifelse(Road_lastyear_10k>3.529 &  Road_lastyear_10k<=10,4,
                                                                                ifelse(Road_lastyear_10k>10,5,NA))))))
-dt4_adl_mmse_ch4_tc <- dt4_adl_mmse_ch4_tc %>% mutate(Road_lastyear_5g = factor(
+dt_model <- dt_model %>% mutate(Road_lastyear_5g = factor(
   Road_lastyear_5g,
   levels = 1:5,
   labels = c(
@@ -1612,7 +1582,7 @@ dt4_adl_mmse_ch4_tc <- dt4_adl_mmse_ch4_tc %>% mutate(Road_lastyear_5g = factor(
   ))
 )
 levels(data_use$Road_lastyear_5g)
-data_use <- dt4_adl_mmse_ch4_tc
+data_use <- dt_model
 
 # Stratification variables
 stra_variables1 <- c("NDVI_lastyear_4g", "NegativePM25_4g", "NegativeNO2_4g",
@@ -1838,14 +1808,14 @@ summary(coxph(Surv(survTime_year,event) ~ PM25_lastyear_10_neg+
                 age + Gender + 
                 Education + Marriage + Regular_exercise_2 + Smoking_2 + Drinking_2 + 
                 strata(prov_lab),
-              data=dt4_adl_mmse_ch4_tc))
+              data=dt_model))
 summary(coxph(Surv(survTime_year,event) ~ river_dist_cat+Road_lastyear_10k + NO2_chap_lastyear_10+
                 GDP2010_buffer005mean_100+Pop_lastyear_100 + Elevation_100 + 
                 age + Gender + 
                 Education + Marriage + Regular_exercise_2 + Smoking_2 + Drinking_2 + 
                 Residence + strata(prov_lab),
-              data=dt4_adl_mmse_ch4_tc))
-spldt <- dt4_adl_mmse_ch4_tc
+              data=dt_model))
+spldt <- dt_model
 library(rms)
 dd <- datadist(spldt)
 options(datadist='dd')
@@ -1873,47 +1843,47 @@ model_satu_water <- bind_rows(bind_rows(lapply(near_water,
                                                cox_f,
                                                x2=NULL,
                                                cov=NULL,
-                                               dataset = dt4_adl_mmse_ch4_tc,category = 1)) %>% mutate(Model="A Unadjusted"),
+                                               dataset = dt_model,category = 1)) %>% mutate(Model="A Unadjusted"),
                               bind_rows(lapply(near_water,
                                                cox_f,
                                                x2=NULL,
                                                cov=cov_demo,
-                                               dataset = dt4_adl_mmse_ch4_tc,category = 1)) %>% mutate(Model="B:A+Demography+Lifestyle"),
+                                               dataset = dt_model,category = 1)) %>% mutate(Model="B:A+Demography+Lifestyle"),
                               bind_rows(lapply(near_water,
                                                cox_f,
                                                x2=NULL,
                                                cov=c(cov_demo,cov_climate),                           
-                                               dataset = dt4_adl_mmse_ch4_tc,category = 1)) %>% mutate(Model="C:B+Climate"),
+                                               dataset = dt_model,category = 1)) %>% mutate(Model="C:B+Climate"),
                               bind_rows(lapply(near_water,
                                                cox_f,
                                                x2=NULL,
                                                cov=c(cov_demo,cov_climate,cov_eco),
-                                               dataset = dt4_adl_mmse_ch4_tc,category = 1)) %>% mutate(Model="D:C+Economy"),
+                                               dataset = dt_model,category = 1)) %>% mutate(Model="D:C+Economy"),
                               bind_rows(lapply(near_water,
                                                cox_f,
                                                x2=NULL,
                                                cov=c(cov_demo,cov_climate,cov_eco,cov_ap
                                                ),
-                                               dataset = dt4_adl_mmse_ch4_tc,category = 1)) %>% mutate(Model="E:D+AP (no road)"),
+                                               dataset = dt_model,category = 1)) %>% mutate(Model="E:D+AP (no road)"),
                               bind_rows(lapply(near_water,
                                                cox_f,
                                                x2=NULL,
                                                cov=c(cov_demo,cov_climate,cov_eco,
                                                      cov_rd),
-                                               dataset = dt4_adl_mmse_ch4_tc,category = 1)) %>% mutate(Model="F:D+Road (no AP)"),
+                                               dataset = dt_model,category = 1)) %>% mutate(Model="F:D+Road (no AP)"),
                               bind_rows(lapply(near_water,
                                                cox_f,
                                                x2=NULL,
                                                cov=c(cov_demo,cov_climate,cov_eco,
                                                      cov_ap,cov_rd
                                                ),
-                                               dataset = dt4_adl_mmse_ch4_tc,category = 1)) %>% mutate(Model="G:D+AP+Road"),
+                                               dataset = dt_model,category = 1)) %>% mutate(Model="G:D+AP+Road"),
                               bind_rows(lapply(near_water,
                                                cox_f,
                                                x2=NULL,
                                                cov=c(cov_demo,cov_climate,cov_eco,
                                                      cov_ap,cov_rd,cov_adlmmse),
-                                               dataset = dt4_adl_mmse_ch4_tc,category = 1)) %>% mutate(Model="H:G+Adl+Cognition")
+                                               dataset = dt_model,category = 1)) %>% mutate(Model="H:G+Adl+Cognition")
 )
 
 

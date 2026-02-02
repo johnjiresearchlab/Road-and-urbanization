@@ -2,7 +2,6 @@ library(dplyr)
 library(ggplot2)
 library(factoextra)   
 library(cluster)     
-# install.packages("FactoMineR", type = "binary")
 library(FactoMineR)
 library(tidyr)
 library(table1)
@@ -11,18 +10,15 @@ library(fmsb)
 library(Hmisc)
 library(ggradar)
 
-
-dt <- dt %>% mutate(GDP2015_4g = cut2(GDP2015_buffer005mean_100,g=4))
+dt <- dt_model
+dt <- dt %>% mutate(GDP2015_4g = cut2(GDP2010_buffer005mean_100,g=4))
 table(dt$GDP2015_4g,useNA = "ifany")
-dt <- dt %>% mutate(PM25_lastyear_10_neg=-PM25_lastyear_10,
-                    NO2_lastyear_ugm3_10_neg=-NO2_lastyear_ugm3_10,
-                    O3_lastyear_10_neg=-O3_lastyear_10)
 
-dt_gdp1 <- subset(dt,GDP2015_4g=="[ 0.1,  10.9)")
-dt_gdp2 <- subset(dt,GDP2015_4g=="[10.9,  26.7)")
-dt_gdp3 <- subset(dt,GDP2015_4g=="[26.7,  71.6)")
-dt_gdp4 <- subset(dt,GDP2015_4g=="[71.6,5894.5]")
-summary(dt_gdp4$GDP2015_buffer005mean_100)
+dt_gdp1 <- subset(dt,GDP2015_4g=="[0.00495,0.0796)")
+dt_gdp2 <- subset(dt,GDP2015_4g=="[0.07963,0.1423)")
+dt_gdp3 <- subset(dt,GDP2015_4g=="[0.14231,0.3238)")
+dt_gdp4 <- subset(dt,GDP2015_4g=="[0.32378,3.4075]")
+
 
 # PCA and cluster ----
 do_pca_cluster <- function(data,
@@ -108,6 +104,8 @@ do_pca_cluster <- function(data,
 
 AP_neg <- c("PM25_lastyear_10_neg","NO2_lastyear_ugm3_10_neg")
 Eco <- c("GDP2010_buffer005mean_100","Nighttime_light_10")
+cisi_col <- c("Infras_CISI", "Infras_energy","Infras_transportation","Infras_water",
+              "Infras_waste","Infras_telecommunication","Infras_healthcare","Infras_education")
 Soc <- c(cisi_col,"Road_lastyear_10k")
 
 var_groups_for_pca <- list(
@@ -265,6 +263,11 @@ library(FactoMineR)
 library(factoextra)
 library(ggplot2)
 library(dplyr)
+summary(dt[,c("PM25_lastyear_10_neg",     "NO2_lastyear_ugm3_10_neg",
+      "GDP2010_buffer005mean_100","Nighttime_light_10",
+"Infras_CISI",              "Infras_energy",            "Infras_transportation",   
+"Infras_water",             "Infras_waste",             "Infras_telecommunication",
+"Infras_healthcare",        "Infras_education",         "Road_lastyear_10k" )])
 
 all_loadings <- lapply(names(var_groups_for_pca), function(group_name) {
   vars <- var_groups_for_pca[[group_name]]
