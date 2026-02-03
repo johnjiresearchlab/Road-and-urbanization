@@ -20,7 +20,7 @@ The analysis is implemented in R. The scripts rely on commonly used CRAN package
    
 Typical installation time: < 10 minutes on a standard desktop computer.
 
-## Demo Dataset
+## Demo Datasets
 The file demo_data1.csv and demo_data2.csv are simulated datasets created solely for demonstration and reproducibility checks. It includes:
 * Time-to-event outcome variables (survival time and event indicator)
 * Environmental exposure variables (e.g., road density, air pollution, greenness)
@@ -38,7 +38,7 @@ dt2_model <- read.csv("demo_data2.csv")
 * "dt2_model" is used for the Cox model in UK_code_cox_demo.R.
 
 
-## Expected output:
+## Expected outputs
 * Model coefficient tables
 * Example figures illustrating exposure–mortality associations
   
