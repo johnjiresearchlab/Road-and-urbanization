@@ -4,11 +4,9 @@ library(broom)
 library(ggplot2)
 library(patchwork)
 library(table1)
-# demo data
-# dt_model <- read.csv("demo.csv")
+# load demo data 1 for cox model
+dt_model <- read.csv("demo_data1.csv")
 # eco cols
-other_col
-cisi_terms
 cisi100_col <- c("Infras_CISI100", "Infras_energy100","Infras_transportation100","Infras_water100",
                  "Infras_waste100","Infras_telecommunication100","Infras_healthcare100","Infras_education100")
 
@@ -22,7 +20,6 @@ Soc_col <- c("Road_lastyear_10k",
              "Infras_waste100_nonzero","Infras_waste100_log"
 )
 Nat_col <- c("PM25_lastyear_10_neg","NO2_lastyear_ugm3_10_neg","NDVI_lastyear_gt0_01") 
-# "CH4_lastyear_100_neg" "near_coast_100km","near_river1j_20km"
 
 # cox model
 cox_f <- function(x1,x2=NULL,cov,dataset,category){
@@ -41,16 +38,9 @@ cox_f <- function(x1,x2=NULL,cov,dataset,category){
     dplyr::select(term, estimate, starts_with("conf"),p.value) %>%  head(category)
   return(data.frame(HR))
 }
-summary(dt_model$NO2_lastyear_ugm3_10)
 
 summary(coxph(Surv(survTime_year,event) ~ Road_lastyear_10k  +
                 GDP2010_buffer005mean_100+Pop_lastyear_100  + Infras_telecommunication100_nonzero+
-                age + Gender + 
-                Education + Marriage + Regular_exercise_2 + Smoking_2 + Drinking_2 + 
-                Residence + strata(prov_lab),
-              data=dt_model))
-summary(coxph(Surv(survTime_year,event) ~ Road_lastyear_10k + NO2_lastyear_ugm3_10 +
-                GDP2010_buffer005mean_100+Pop_lastyear_100 + Elevation_100 + 
                 age + Gender + 
                 Education + Marriage + Regular_exercise_2 + Smoking_2 + Drinking_2 + 
                 Residence + strata(prov_lab),
@@ -75,7 +65,7 @@ cov_eco <- c("Residence","GDP2010_buffer005mean_100","Nighttime_light","Pop_last
 cov_ap <- c("PM25_lastyear_10","NO2_lastyear_ugm3_10")
 cov_rd <- "Road_lastyear_10k"
 cov_adlmmse <- c("adl_2","CognitiveImpairment")
-summary(dt_model$GDP2010_buffer005mean_100)
+
 # model ----
 model_satu_2 <- bind_rows(bind_rows(lapply(c(Soc_col,Eco_col,Nat_col),
                                                cox_f,
@@ -124,13 +114,6 @@ model_satu_2 <- bind_rows(bind_rows(lapply(c(Soc_col,Eco_col,Nat_col),
 model_satu_2 <- model_satu_2 %>% mutate(sig = ifelse(p.value < 0.05, "*", "")) 
 
 write.csv(model_satu,"model_satu.csv")
-
-model_satuD2 <- bind_rows(lapply(c(Soc_col,Eco_col,Nat_col),
-                 cox_f,
-                 x2=NULL,
-                 cov=c(cov_demo,cov_climate,cov_eco,cov_adlmmse),
-                 dataset = dt_model,category = 1)) %>% 
-  mutate(Model="D2:C+Economy",sig = ifelse(p.value < 0.05, "*", ""))
 
 # Sco -----
 infra_model_satu <- model_satu_2 %>% filter(term %in% c(Soc_col,

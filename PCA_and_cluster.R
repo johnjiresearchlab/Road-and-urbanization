@@ -375,7 +375,7 @@ forest_alldtdt <- plot_forest_clusters(hr_alldtdt,
 library(dplyr)
 library(gridExtra)
 
-# 2. Calculate Mean Percentiles
+# Calculate Mean Percentiles
 cluster_stats <- cluster_alldtdt %>%
   # Rank every row from 1 to 100 for each variable
   mutate(across(all_of(vars_for_clustering), ~ ntile(., 100))) %>% 
@@ -452,19 +452,19 @@ add_table_lines <- function(table_grob) {
   nr <- nrow(table_grob)
   nc <- ncol(table_grob)
   
-  # 1. Top Line (Thick) - At the TOP of the Header 
+  # Top Line (Thick) - At the TOP of the Header 
   table_grob <- gtable_add_grob(table_grob,
                                 grobs = segmentsGrob(y0 = unit(1,"npc"), y1 = unit(1,"npc"), 
                                                      gp = gpar(lwd = 2)),
                                 t = 1, b = 1, l = 1, r = nc)
   
-  # 2. Middle Line (Thin) - Draw at the TOP of the First Data Row
+  # Middle Line (Thin) - Draw at the TOP of the First Data Row
   table_grob <- gtable_add_grob(table_grob,
                                 grobs = segmentsGrob(y0 = unit(1,"npc"), y1 = unit(1,"npc"), 
                                                      gp = gpar(lwd = 1)),
                                 t = 2, b = 2, l = 1, r = nc)
   
-  # 3. Bottom Line (Thick) - At the BOTTOM of the Last Row
+  # Bottom Line (Thick) - At the BOTTOM of the Last Row
   table_grob <- gtable_add_grob(table_grob,
                                 grobs = segmentsGrob(y0 = unit(0,"npc"), y1 = unit(0,"npc"), 
                                                      gp = gpar(lwd = 2)),
@@ -493,7 +493,6 @@ bottom_row_inner <- plot_spacer() + forest_clean + plot_spacer() +
   plot_layout(widths = c(0.5, 5, 0.5))
 
 # ---Add Title B to the Full Width Row ---
-# We wrap the inner row so it acts like one big plot, then add the title to IT.
 bottom_row_titled <- wrap_elements(bottom_row_inner) + 
   labs(title = "B. Environmental Profiles and Mortality (Hazard Ratio)") +
   title_theme
