@@ -2,7 +2,7 @@
 
 The code performs modeling and visualization of the relationship between infrastructure, environmental factors, and mortality outcomes in older adults.
 
-Note: A small simulated dataset (demo.csv) is included to test the code structure and workflow.
+Note: Two small simulated datasets are included to test the code structure and workflow.
 
 ## System Requirements
 * Operating system: macOS, Linux, or Windows
@@ -21,19 +21,25 @@ The analysis is implemented in R. The scripts rely on commonly used CRAN package
 Typical installation time: < 10 minutes on a standard desktop computer.
 
 ## Demo Dataset
-The file demo_data.csv is a simulated dataset created solely for demonstration and reproducibility checks. It includes:
+The file demo_data1.csv and demo_data2.csv are simulated datasets created solely for demonstration and reproducibility checks. It includes:
 * Time-to-event outcome variables (survival time and event indicator)
 * Environmental exposure variables (e.g., road density, air pollution, greenness)
-* Individual-level covariates (e.g., functional status, cognitive impairment)
-* Categorical environmental context variables (e.g., distance to coast, distance to major river)
-The demo data does not reproduce the original study data or results.
+* Individual-level covariates (e.g., age, sex, health)
 
-Run below code to load the demo dataset:
+The simulated datasets are generated to mimic the structure and variable types of the analysis dataset. They do not reproduce the original study data or results. 
 
-dt_model <- read.csv("demo.csv")
+Run the code below to load the demo dataset:
+```r
+dt1_model <- read.csv("demo_data1.csv")
+dt2_model <- read.csv("demo_data2.csv")
+```
+
+* "dt1_model" is used for the Cox model in Environment_model.R.
+* "dt2_model" is used for the Cox model in UK_code_cox_demo.R.
+
 
 ## Expected output:
 * Model coefficient tables
 * Example figures illustrating exposure–mortality associations
   
-Expected runtime: < 10 minutes on a standard desktop computer.
+Expected runtime: < 5 minutes on a standard desktop computer.
